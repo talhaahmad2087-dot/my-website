@@ -1,2 +1,2 @@
-# my-website
+#  Sher Pharmacy
 my first HTML project
