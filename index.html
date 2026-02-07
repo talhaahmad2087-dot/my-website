@@ -107,117 +107,27 @@ th,td{font-size:11px;}
 </div>
 
 <script>
-const dateInput=document.getElementById("date");
-const days=["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
-const dayName=document.getElementById("dayName");
-const electricBill=document.getElementById("electricBill");
-const phoneBill=document.getElementById("phoneBill");
+// Import the functions you need from the SDKs you need
+import { initializeApp } from "firebase/app";
+import { getAnalytics } from "firebase/analytics";
+// TODO: Add SDKs for Firebase products that you want to use
+// https://firebase.google.com/docs/web/setup#available-libraries
 
-dateInput.value=new Date().toISOString().split("T")[0];
+// Your web app's Firebase configuration
+// For Firebase JS SDK v7.20.0 and later, measurementId is optional
+const firebaseConfig = {
+  apiKey: "AIzaSyCwjJ3eli7Gl6LUTyjqCTXECWI0a1XNh8A",
+  authDomain: "shey-pharmacy.firebaseapp.com",
+  projectId: "shey-pharmacy",
+  storageBucket: "shey-pharmacy.firebasestorage.app",
+  messagingSenderId: "1059174086643",
+  appId: "1:1059174086643:web:720d75daa1d69daffc0486",
+  measurementId: "G-7YHP55QHD8"
+};
 
-function addRow(d={}){
-let r=document.createElement("tr");
-r.innerHTML=`
-<td><input value="${d.c||""}"></td>
-<td><input type="number" value="${d.b||""}"></td>
-<td><input type="number" value="${d.q||""}"></td>
-<td><textarea>${d.o||""}</textarea></td>
-<td><input type="number" value="${d.op||""}"></td>
-<td><input type="number" value="${d.s||""}"></td>
-<td><button onclick="this.closest('tr').remove();save()">❌</button></td>`;
-table.appendChild(r);
-r.querySelectorAll("input,textarea").forEach(e=>e.oninput=save);
-}
-
-function save(){
-let arr=[],b=0,q=0,o=0,s=0;
-document.querySelectorAll("#table tr").forEach((r,i)=>{
-if(i===0)return;
-let e=r.querySelectorAll("input,textarea");
-let d={c:e[0].value,b:+e[1].value||0,q:+e[2].value||0,o:e[3].value,op:+e[4].value||0,s:+e[5].value||0};
-b+=d.b;q+=d.q;o+=d.op;s+=d.s;
-arr.push(d);
-});
-billT.innerText=b;baqayaT.innerText=q;orderT.innerText=o;saleT.innerText=s;
-localStorage.setItem(dateInput.value,JSON.stringify(arr));
-saveExtra();calcMY();filterCompany();
-}
-
-function load(){
-table.querySelectorAll("tr:not(:first-child)").forEach(r=>r.remove());
-(JSON.parse(localStorage.getItem(dateInput.value))||Array(10).fill({})).forEach(addRow);
-dayName.innerText=days[new Date(dateInput.value).getDay()];
-loadExtra();save();
-}
-
-function changeDay(n){
-let d=new Date(dateInput.value);
-d.setDate(d.getDate()+n);
-dateInput.value=d.toISOString().split("T")[0];
-load();
-}
-
-function saveExtra(){
-localStorage.setItem(dateInput.value+"_extra",JSON.stringify({e:+electricBill.value||0,p:+phoneBill.value||0}));
-eTotal.innerText=electricBill.value;pTotal.innerText=phoneBill.value;
-}
-
-function loadExtra(){
-let ex=JSON.parse(localStorage.getItem(dateInput.value+"_extra")||'{"e":0,"p":0}');
-electricBill.value=ex.e;phoneBill.value=ex.p;
-}
-
-function calcMY(){
-let mB=0,mO=0,mQ=0,mS=0,mE=0,mP=0;
-let yB=0,yO=0,yQ=0,yS=0,yE=0,yP=0;
-let ym=dateInput.value.slice(0,7),y=dateInput.value.slice(0,4);
-Object.keys(localStorage).forEach(k=>{
-if(k.endsWith("_extra"))return;
-let rows=JSON.parse(localStorage.getItem(k)||"[]");
-rows.forEach(r=>{
-if(k.startsWith(ym)){mB+=r.b;mO+=r.op;mQ+=r.q;mS+=r.s;}
-if(k.startsWith(y)){yB+=r.b;yO+=r.op;yQ+=r.q;yS+=r.s;}
-});
-let ex=JSON.parse(localStorage.getItem(k+"_extra")||'{"e":0,"p":0}');
-if(k.startsWith(ym)){mE+=ex.e;mP+=ex.p;}
-if(k.startsWith(y)){yE+=ex.e;yP+=ex.p;}
-});
-mBill.innerText=mB;mOrder.innerText=mO;mBaqaya.innerText=mQ;mSale.innerText=mS;mElectric.innerText=mE;mPhone.innerText=mP;
-yBill.innerText=yB;yOrder.innerText=yO;yBaqaya.innerText=yQ;ySale.innerText=yS;yElectric.innerText=yE;yPhone.innerText=yP;
-}
-
-function filterCompany(){
-let f=searchBox.value.toLowerCase();
-let cb=0,co=0,cs=0,cq=0;
-document.querySelectorAll("#table tr").forEach((r,i)=>{
-if(i===0)return;
-let c=r.cells[0].querySelector("input").value.toLowerCase();
-if(c.includes(f)){
-r.style.display="";
-cb+=+r.cells[1].querySelector("input").value||0;
-cq+=+r.cells[2].querySelector("input").value||0;
-co+=+r.cells[4].querySelector("input").value||0;
-cs+=+r.cells[5].querySelector("input").value||0;
-}else r.style.display="none";
-});
-cBill.innerText=cb;cOrder.innerText=co;cSale.innerText=cs;cBaqaya.innerText=cq;
-}
-
-function exportData(){
-let data={};Object.keys(localStorage).forEach(k=>data[k]=localStorage.getItem(k));
-let a=document.createElement("a");
-a.href=URL.createObjectURL(new Blob([JSON.stringify(data)],{type:"application/json"}));
-a.download="SherPharmacyBackup.json";a.click();
-}
-
-function importData(e){
-let r=new FileReader();
-r.onload=x=>{let d=JSON.parse(x.target.result);Object.keys(d).forEach(k=>localStorage.setItem(k,d[k]));load();}
-r.readAsText(e.target.files[0]);
-}
-
-dateInput.onchange=load;
-load();
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const analytics = getAnalytics(app);
 </script>
 
 </body>
