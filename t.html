@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sher Pharmacy Register</title>
+<style>
+body{font-family:Arial;background:#f2f2f2;padding:20px;}
+.container{background:#fff;padding:15px;border:2px solid #1f3c88;max-width:1600px;margin:auto;}
+.header{text-align:center;font-size:32px;font-weight:bold;color:#1f3c88;}
+.top{display:flex;justify-content:space-between;align-items:center;margin:10px 0;}
+input,textarea{width:100%;border:none;outline:none;font-size:15px;}
+input{height:34px;}
+textarea{height:60px;resize:none;}
+table{width:100%;border-collapse:collapse;}
+th,td{border:1px solid #1f3c88;padding:6px;text-align:center;}
+th{background:#e8edff;}
+.summary,.monthly,.yearly,.companySummary{
+margin-top:10px;padding:10px;border:2px solid #1f3c88;
+background:#f9f9ff;font-weight:bold;display:flex;justify-content:space-around;flex-wrap:wrap;
+}
+button{padding:6px 12px;cursor:pointer;}
+#searchBox{margin:10px 0;height:30px;font-size:15px;padding:4px;width:300px;}
+</style>
+</head>
+<body>
+
+<div class="container">
+<div class="header">Sher Pharmacy</div>
+
+<div class="top">
+<div>
+<button onclick="changeDay(-1)">⏮️ Prev</button>
+Date: <input type="date" id="date">
+<button onclick="changeDay(1)">Next ▶️</button>
+</div>
+<div>Telephone: <input placeholder="Phone No"></div>
+</div>
+
+<input type="text" id="searchBox" placeholder="Search Company Name..." oninput="filterCompany()">
+
+<table id="table">
+<tr>
+<th>Company</th>
+<th>Bill</th>
+<th>Baqaya</th>
+<th>Order</th>
+<th>Order Payment</th>
+<th>Daily Sale</th>
+</tr>
+</table>
+
+<div class="summary">
+<div>Today Bill: Rs <span id="billT">0</span></div>
+<div>Today Order Pay: Rs <span id="orderT">0</span></div>
+<div>Today Daily Sale: Rs <span id="saleT">0</span></div>
+<div>Today Baqaya: Rs <span id="baqayaT">0</span></div>
+</div>
+
+<div class="monthly">
+<div>Monthly Bill: Rs <span id="mBill">0</span></div>
+<div>Monthly Order Pay: Rs <span id="mOrder">0</span></div>
+<div>Monthly Daily Sale: Rs <span id="mSale">0</span></div>
+<div>Monthly Baqaya: Rs <span id="mBaqaya">0</span></div>
+</div>
+
+<div class="yearly">
+<div>Yearly Bill: Rs <span id="yBill">0</span></div>
+<div>Yearly Order Pay: Rs <span id="yOrder">0</span></div>
+<div>Yearly Daily Sale: Rs <span id="ySale">0</span></div>
+<div>Yearly Baqaya: Rs <span id="yBaqaya">0</span></div>
+</div>
+
+<!-- COMPANY SPECIFIC SUMMARY -->
+<div class="companySummary">
+<div>Company Bill Paid: Rs <span id="cBill">0</span></div>
+<div>Company Order Pay: Rs <span id="cOrder">0</span></div>
+<div>Company Daily Sale: Rs <span id="cSale">0</span></div>
+<div>Company Baqaya: Rs <span id="cBaqaya">0</span></div>
+</div>
+
+<button onclick="window.print()">🖨️ Print</button>
+</div>
+
+<script>
+const dateInput=document.getElementById("date");
+dateInput.value=new Date().toISOString().split("T")[0];
+
+function addRow(d={}){
+const r=document.createElement("tr");
+r.innerHTML=`
+<td><input value="${d.c||""}"></td>
+<td><input type="number" value="${d.b||""}"></td>
+<td><input type="number" value="${d.q||""}"></td>
+<td><textarea>${d.o||""}</textarea></td>
+<td><input type="number" value="${d.op||""}"></td>
+<td><input type="number" value="${d.s||""}"></td>
+`;
+table.appendChild(r);
+r.querySelectorAll("input,textarea").forEach(e=>e.oninput=save);
+}
+
+function save(){
+let arr=[],b=0,q=0,o=0,s=0;
+document.querySelectorAll("#table tr").forEach((r,i)=>{
+if(i===0)return;
+let e=r.querySelectorAll("input,textarea");
+let d={c:e[0].value,b:+e[1].value||0,q:+e[2].value||0,o:e[3].value,op:+e[4].value||0,s:+e[5].value||0};
+b+=d.b; q+=d.q; o+=d.op; s+=d.s;
+arr.push(d);
+});
+billT.innerText=b; baqayaT.innerText=q; orderT.innerText=o; saleT.innerText=s;
+localStorage.setItem(dateInput.value,JSON.stringify(arr));
+calcMY();
+filterCompany();
+}
+
+function load(){
+document.querySelectorAll("#table tr").forEach((r,i)=>{if(i>0)r.remove();});
+let d=JSON.parse(localStorage.getItem(dateInput.value)||"[]");
+(d.length?d:Array(30).fill({})).forEach(x=>addRow(x));
+save();
+}
+
+function changeDay(n){
+let d=new Date(dateInput.value);
+d.setDate(d.getDate()+n);
+dateInput.value=d.toISOString().split("T")[0];
+load();
+}
+
+function calcMY(){
+let mB=0,mO=0,mQ=0,mS=0,yB=0,yO=0,yQ=0,yS=0;
+let ym=dateInput.value.slice(0,7),y=dateInput.value.slice(0,4);
+Object.keys(localStorage).forEach(k=>{
+let rows=JSON.parse(localStorage.getItem(k)||"[]");
+rows.forEach(r=>{
+if(k.startsWith(ym)){mB+=r.b;mO+=r.op;mQ+=r.q;mS+=r.s;}
+if(k.startsWith(y)){yB+=r.b;yO+=r.op;yQ+=r.q;yS+=r.s;}
+});
+});
+mBill.innerText=mB; mOrder.innerText=mO; mBaqaya.innerText=mQ; mSale.innerText=mS;
+yBill.innerText=yB; yOrder.innerText=yO; yBaqaya.innerText=yQ; ySale.innerText=yS;
+}
+
+// SEARCH FUNCTION + COMPANY SUMMARY
+function filterCompany(){
+let filter=document.getElementById("searchBox").value.toLowerCase();
+let cb=0,co=0,cs=0,cq=0;
+document.querySelectorAll("#table tr").forEach((r,i)=>{
+if(i===0)return; // skip header
+let comp=r.cells[0].querySelector("input").value.toLowerCase();
+if(comp.includes(filter)){
+r.style.display="";
+cb+=+r.cells[1].querySelector("input").value||0;
+cq+=+r.cells[2].querySelector("input").value||0;
+co+=+r.cells[4].querySelector("input").value||0;
+cs+=+r.cells[5].querySelector("input").value||0;
+}else r.style.display="none";
+});
+cBill.innerText=cb;
+cOrder.innerText=co;
+cBaqaya.innerText=cq;
+cSale.innerText=cs;
+}
+
+dateInput.onchange=load;
+load();
+</script>
+
+</body>
+</html>
