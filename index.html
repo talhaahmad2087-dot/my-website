@@ -31,7 +31,78 @@ th,td{font-size:11px;}
 }
 </style>
 </head>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
+<script>
+  // آپ کی اصلی کنفیگریشن جو آپ کو فائر بیس سے ملی
+  const firebaseConfig = {
+    apiKey: "AIzaSyCwjJ3eli7Gl6LUTyjqCTXECWI0a1XNh8A",
+    authDomain: "shey-pharmacy.firebaseapp.com",
+    projectId: "shey-pharmacy",
+    storageBucket: "shey-pharmacy.firebasestorage.app",
+    messagingSenderId: "1059174086643",
+    appId: "1:1059174086643:web:720d75daa1d69daffc0486",
+    measurementId: "G-7YHP55QHD8"
+  };
+
+  // فائر بیس شروع کریں
+  firebase.initializeApp(firebaseConfig);
+  const database = firebase.database();
+
+  // تاریخ سیٹ کریں
+  const dateInput = document.getElementById("date");
+  if(dateInput) dateInput.value = new Date().toISOString().split("T")[0];
+
+  // ڈیٹا کو کلاؤڈ پر محفوظ کرنے کا فنکشن
+  function save() {
+    const tableBody = document.querySelector("table tbody") || document.querySelector("table");
+    const rows = tableBody.querySelectorAll("tr:not(:first-child)");
+    let allData = [];
+
+    rows.forEach(row => {
+      const inputs = row.querySelectorAll("input, textarea");
+      if (inputs.length > 0) {
+        allData.push({
+          c: inputs[0].value,  // Company
+          b: inputs[1].value,  // Order
+          q: inputs[2].value,  // Qty
+          o: inputs[3].value,  // Description
+          op: inputs[4].value, // Price
+          s: inputs[5].value   // Sale
+        });
+      }
+    });
+    database.ref('pharmacy_data/').set(allData);
+  }
+
+  // لائیو اپ ڈیٹ: پانچوں لوگوں کو ڈیٹا نظر آئے گا
+  database.ref('pharmacy_data/').on('value', (snapshot) => {
+    const data = snapshot.val();
+    const table = document.querySelector("table");
+    const existingRows = table.querySelectorAll("tr:not(:first-child)");
+    existingRows.forEach(row => row.remove());
+
+    if (data) {
+      data.forEach(item => addRow(item));
+    }
+  });
+
+  // نیا رو (Row) بنانے کا فنکشن
+  function addRow(d = {}) {
+    const table = document.querySelector("table");
+    const r = document.createElement("tr");
+    r.innerHTML = `
+      <td><input value="${d.c || ""}" oninput="save()"></td>
+      <td><input type="number" value="${d.b || ""}" oninput="save()"></td>
+      <td><input type="number" value="${d.q || ""}" oninput="save()"></td>
+      <td><textarea oninput="save()">${d.o || ""}</textarea></td>
+      <td><input type="number" value="${d.op || ""}" oninput="save()"></td>
+      <td><input type="number" value="${d.s || ""}" oninput="save()"></td>
+      <td><button onclick="this.closest('tr').remove(); save()">❌</button></td>`;
+    table.appendChild(r);
+  }
+</script>
 <body>
 
 <div class="container">
@@ -107,166 +178,6 @@ th,td{font-size:11px;}
 </div>
 
   <script>
-// ✅ Password
-const PASSWORD = "";
-function checkPassword(){
-  let val = document.getElementById("passwordInput").value;
-  if(val === PASSWORD){
-    document.getElementById("loginScreen").style.display="none";
-    document.getElementById("mainContainer").style.display="block";
-    load();
-  } else {
-    document.getElementById("passMsg").innerText="Incorrect Password!";
-  }
-}
-
-// ✅ Variables
-const dateInput = document.getElementById("date");
-const days=["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
-const dayName = document.getElementById("dayName");
-const electricBill = document.getElementById("electricBill");
-const phoneBill = document.getElementById("phoneBill");
-const eTotal = document.getElementById("eTotal");
-const pTotal = document.getElementById("pTotal");
-
-const mElectric = document.getElementById("mElectric");
-const mPhone = document.getElementById("mPhone");
-const yElectric = document.getElementById("yElectric");
-const yPhone = document.getElementById("yPhone");
-
-dateInput.value = new Date().toISOString().split("T")[0];
-dayName.innerText = days[new Date(dateInput.value).getDay()];
-
-// ✅ Save extra bills
-function saveExtra(){
-  eTotal.innerText = +electricBill.value||0;
-  pTotal.innerText = +phoneBill.value||0;
-  localStorage.setItem(dateInput.value+"_extra", JSON.stringify({e:+electricBill.value||0, p:+phoneBill.value||0}));
-}
-function loadExtra(){
-  let ex = JSON.parse(localStorage.getItem(dateInput.value+"_extra")||'{"e":0,"p":0}');
-  electricBill.value = ex.e;
-  phoneBill.value = ex.p;
-  saveExtra();
-}
-
-// ✅ Add row
-function addRow(d={}){
-  const r = document.createElement("tr");
-  r.innerHTML=`
-    <td><input value="${d.c||""}"></td>
-    <td><input type="number" value="${d.b||""}"></td>
-    <td><input type="number" value="${d.q||""}"></td>
-    <td><textarea>${d.o||""}</textarea></td>
-    <td><input type="number" value="${d.op||""}"></td>
-    <td><input type="number" value="${d.s||""}"></td>
-    <td><button onclick="deleteRow(this)">❌</button></td>
-  `;
-  table.appendChild(r);
-  r.querySelectorAll("input,textarea").forEach(e => e.oninput = save);
-}
-
-// ✅ Delete row
-function deleteRow(btn){
-  btn.closest("tr").remove();
-  save();
-}
-
-// ✅ Save table & totals
-function save(){
-  let arr=[],b=0,q=0,o=0,s=0;
-  document.querySelectorAll("#table tr").forEach((r,i)=>{
-    if(i===0) return;
-    let e = r.querySelectorAll("input,textarea");
-    let d={c:e[0].value,b:+e[1].value||0,q:+e[2].value||0,o:e[3].value,op:+e[4].value||0,s:+e[5].value||0};
-    b+=d.b;q+=d.q;o+=d.op;s+=d.s;
-    arr.push(d);
-  });
-  billT.innerText=b; baqayaT.innerText=q; orderT.innerText=o; saleT.innerText=s;
-  localStorage.setItem(dateInput.value, JSON.stringify(arr));
-  calcMY();filterCompany();saveExtra();
-}
-
-// ✅ Load table
-function load(){
-  document.querySelectorAll("#table tr").forEach((r,i)=>{if(i>0) r.remove();});
-  let d = JSON.parse(localStorage.getItem(dateInput.value)||"[]");
-  (d.length ? d : Array(10).fill({})).forEach(x => addRow(x));
-  dayName.innerText = days[new Date(dateInput.value).getDay()];
-  loadExtra();
-  save();
-}
-
-// ✅ Change date
-function changeDay(n){
-  let d = new Date(dateInput.value);
-  d.setDate(d.getDate()+n);
-  dateInput.value = d.toISOString().split("T")[0];
-  load();
-}
-
-// ✅ Monthly & yearly totals
-function calcMY(){
-  let mB=0,mO=0,mQ=0,mS=0,mE=0,mP=0;
-  let yB=0,yO=0,yQ=0,yS=0,yE=0,yP=0;
-  let ym=dateInput.value.slice(0,7),y=dateInput.value.slice(0,4);
-  Object.keys(localStorage).forEach(k=>{
-    if(k.endsWith("_extra")) return;
-    let rows = JSON.parse(localStorage.getItem(k)||"[]");
-    rows.forEach(r=>{
-      if(k.startsWith(ym)){mB+=r.b;mO+=r.op;mQ+=r.q;mS+=r.s;}
-      if(k.startsWith(y)){yB+=r.b;yO+=r.op;yQ+=r.q;yS+=r.s;}
-    });
-    let ex = JSON.parse(localStorage.getItem(k+"_extra")||'{"e":0,"p":0}');
-    if(k.startsWith(ym)){mE+=ex.e;mP+=ex.p;}
-    if(k.startsWith(y)){yE+=ex.e;yP+=ex.p;}
-  });
-  mBill.innerText=mB; mOrder.innerText=mO; mBaqaya.innerText=mQ; mSale.innerText=mS; mElectric.innerText=mE; mPhone.innerText=mP;
-  yBill.innerText=yB; yOrder.innerText=yO; yBaqaya.innerText=yQ; ySale.innerText=yS; yElectric.innerText=yE; yPhone.innerText=yP;
-}
-
-// ✅ Company filter
-function filterCompany(){
-  let f = searchBox.value.toLowerCase();
-  let cb=0,co=0,cs=0,cq=0;
-  document.querySelectorAll("#table tr").forEach((r,i)=>{
-    if(i===0) return;
-    let c = r.cells[0].querySelector("input").value.toLowerCase();
-    if(c.includes(f)){
-      r.style.display="";
-      cb += +r.cells[1].querySelector("input").value||0;
-      cq += +r.cells[2].querySelector("input").value||0;
-      co += +r.cells[4].querySelector("input").value||0;
-      cs += +r.cells[5].querySelector("input").value||0;
-    } else r.style.display="none";
-  });
-  cBill.innerText=cb; cOrder.innerText=co; cSale.innerText=cs; cBaqaya.innerText=cq;
-}
-
-// ✅ Export data
-function exportData(){
-  const data = {};
-  Object.keys(localStorage).forEach(k=>{ data[k] = localStorage.getItem(k); });
-  const blob = new Blob([JSON.stringify(data)], {type: "application/json"});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url; a.download = "SherPharmacyBackup.json"; a.click();
-}
-
-// ✅ Import data
-function importData(e){
-  const file = e.target.files[0];
-  const reader = new FileReader();
-  reader.onload = function(ev){
-    const imported = JSON.parse(ev.target.result);
-    Object.keys(imported).forEach(k => localStorage.setItem(k, imported[k]));
-    load();
-  };
-  reader.readAsText(file);
-}
-
-dateInput.onchange = load;
-</script>
 // Import the functions you need from the SDKs you need
 import { initializeApp } from "firebase/app";
 import { getAnalytics } from "firebase/analytics";
@@ -289,6 +200,8 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const analytics = getAnalytics(app);
 </script>
+  
 
 </body>
+</head>
 </html>
