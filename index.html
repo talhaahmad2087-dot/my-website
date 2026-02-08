@@ -12,7 +12,47 @@
             margin: 0;
         }
 
+        /* Password Overlay Styles */
+        #loginOverlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #1f3c88;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .login-card {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+            text-align: center;
+            width: 300px;
+        }
+
+        .login-card h2 {
+            color: #1f3c88;
+            margin-bottom: 20px;
+        }
+
+        .login-card input {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 15px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            font-size: 18px;
+            text-align: center;
+        }
+
+        /* Main Container Styles */
         .container {
+            display: none; /* Hidden until password is correct */
             background: #fff;
             padding: 15px;
             border: 2px solid #1f3c88;
@@ -165,13 +205,24 @@
         }
 
         @media print {
-            .controls, button, #searchBox, .top button { display: none !important; }
-            .container { border: none; }
+            .controls, button, #searchBox, .top button, #loginOverlay { display: none !important; }
+            .container { border: none; display: block !important; }
             body { background: white; padding: 0; }
         }
     </style>
 </head>
 <body>
+
+<!-- Password Screen -->
+<div id="loginOverlay">
+    <div class="login-card">
+        <h2>Sher Pharmacy</h2>
+        <p>Enter Password to access Register</p>
+        <input type="password" id="passInput" placeholder="Password" onkeydown="if(event.key==='Enter') checkPass()">
+        <button onclick="checkPass()" style="width: 100%; padding: 12px; font-weight: bold;">Unlock</button>
+        <p id="errorMsg" style="color: red; margin-top: 10px; display: none;">❌ Incorrect Password!</p>
+    </div>
+</div>
 
 <div class="container" id="mainContainer">
     <div class="header">Sher Pharmacy</div>
@@ -186,6 +237,7 @@
         <div><strong>Day:</strong> <span id="dayName"></span></div>
         <div><strong>Electricity:</strong> <input type="number" id="electricBill" value="0" oninput="saveExtra()"></div>
         <div><strong>Telephone:</strong> <input type="number" id="phoneBill" value="0" oninput="saveExtra()"></div>
+        <a href="file:///C:/Users/khan/Desktop/1111.html">Odar/ loan</a>
     </div>
 
     <input type="text" id="searchBox" placeholder="🔍 Search Company Name..." oninput="filterCompany()">
@@ -218,7 +270,6 @@
     </div>
 
     <div class="summary-grid">
-        <!-- Daily Summary -->
         <div class="card">
             <div class="card-title">Today Summary</div>
             <div class="row-data"><span>Total Bill:</span> <span>Rs <span id="billT">0</span></span></div>
@@ -229,7 +280,6 @@
             <div class="row-data"><span>Phone:</span> <span>Rs <span id="pTotal">0</span></span></div>
         </div>
 
-        <!-- Monthly Summary -->
         <div class="card">
             <div class="card-title">Monthly Summary</div>
             <div class="row-data"><span>Bill:</span> <span>Rs <span id="mBill">0</span></span></div>
@@ -240,7 +290,6 @@
             <div class="row-data"><span>Phone:</span> <span>Rs <span id="mPhone">0</span></span></div>
         </div>
 
-        <!-- Yearly Summary -->
         <div class="card">
             <div class="card-title">Yearly Summary</div>
             <div class="row-data"><span>Bill:</span> <span>Rs <span id="yBill">0</span></span></div>
@@ -249,7 +298,6 @@
             <div class="row-data"><span>Baqaya:</span> <span>Rs <span id="yBaqaya">0</span></span></div>
         </div>
 
-        <!-- Filtered Company Summary -->
         <div class="card" id="companyCard">
             <div class="card-title">Search Result</div>
             <div class="row-data"><span>Bill:</span> <span>Rs <span id="cBill">0</span></span></div>
@@ -266,11 +314,26 @@
     const tableBody = document.getElementById("tableBody");
     const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
-    // Initialize Date
-    window.onload = function() {
+    // Password Logic
+    function checkPass() {
+        const input = document.getElementById("passInput").value;
+        const correctPass = "0809";
+        
+        if (input === correctPass) {
+            document.getElementById("loginOverlay").style.display = "none";
+            document.getElementById("mainContainer").style.display = "block";
+            initApp();
+        } else {
+            document.getElementById("errorMsg").style.display = "block";
+            document.getElementById("passInput").value = "";
+        }
+    }
+
+    // Initialize App after login
+    function initApp() {
         dateInput.value = new Date().toISOString().split("T")[0];
         load();
-    };
+    }
 
     function saveExtra() {
         const e = +document.getElementById("electricBill").value || 0;
@@ -319,6 +382,7 @@
 
         document.querySelectorAll("#tableBody tr").forEach(tr => {
             let inputs = tr.querySelectorAll("input, textarea");
+            if (inputs.length < 6) return;
             let data = {
                 c: inputs[0].value,
                 b: +inputs[1].value || 0,
@@ -351,7 +415,7 @@
         let savedData = JSON.parse(localStorage.getItem(dateInput.value) || "[]");
         
         if (savedData.length === 0) {
-            for (let i = 0; i < 5; i++) addRow(); // Add 5 empty rows by default
+            for (let i = 0; i < 5; i++) addRow();
         } else {
             savedData.forEach(item => addRow(item));
         }
@@ -376,7 +440,6 @@
         let currentYear = dateInput.value.slice(0, 4);
 
         Object.keys(localStorage).forEach(key => {
-            // Process extra bills
             if (key.endsWith("_extra")) {
                 let dateKey = key.replace("_extra", "");
                 let ex = JSON.parse(localStorage.getItem(key));
@@ -386,15 +449,14 @@
                 return;
             }
 
-            // Process table data
             if (/^\d{4}-\d{2}-\d{2}$/.test(key)) {
                 let rows = JSON.parse(localStorage.getItem(key) || "[]");
                 rows.forEach(r => {
                     if (key.startsWith(currentMonth)) {
-                        mB += r.b; mO += r.op; mQ += r.q; mS += r.s;
+                        mB += (r.b || 0); mO += (r.op || 0); mQ += (r.q || 0); mS += (r.s || 0);
                     }
                     if (key.startsWith(currentYear)) {
-                        yB += r.b; yO += r.op; yQ += r.q; yS += r.s;
+                        yB += (r.b || 0); yO += (r.op || 0); yQ += (r.q || 0); yS += (r.s || 0);
                     }
                 });
             }
@@ -418,14 +480,17 @@
         let cB = 0, cO = 0, cS = 0, cQ = 0;
 
         document.querySelectorAll("#tableBody tr").forEach(tr => {
-            let companyName = tr.cells[0].querySelector("input").value.toLowerCase();
+            let inputs = tr.querySelectorAll("input");
+            if(inputs.length === 0) return;
+            let companyName = inputs[0].value.toLowerCase();
+            
             if (companyName.includes(filter)) {
                 tr.style.display = "";
                 if (filter !== "") {
-                    cB += +tr.cells[1].querySelector("input").value || 0;
-                    cQ += +tr.cells[2].querySelector("input").value || 0;
-                    cO += +tr.cells[4].querySelector("input").value || 0;
-                    cS += +tr.cells[5].querySelector("input").value || 0;
+                    cB += +inputs[1].value || 0;
+                    cQ += +inputs[2].value || 0;
+                    cO += +inputs[3].value || 0;
+                    cS += +inputs[4].value || 0;
                 }
             } else {
                 tr.style.display = "none";
