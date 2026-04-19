@@ -1,172 +1,422 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" dir="ltr">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Sher Pharmacy Register</title>
-<style>
-body{font-family:Arial;background:#f2f2f2;padding:20px;}
-.container{background:#fff;padding:15px;border:2px solid #1f3c88;max-width:1600px;margin:auto;}
-.header{text-align:center;font-size:32px;font-weight:bold;color:#1f3c88;}
-.top{display:flex;justify-content:space-between;align-items:center;margin:10px 0;}
-input,textarea{width:100%;border:none;outline:none;font-size:15px;}
-input{height:34px;}
-textarea{height:60px;resize:none;}
-table{width:100%;border-collapse:collapse;}
-th,td{border:1px solid #1f3c88;padding:6px;text-align:center;}
-th{background:#e8edff;}
-.summary,.monthly,.yearly,.companySummary{
-margin-top:10px;padding:10px;border:2px solid #1f3c88;
-background:#f9f9ff;font-weight:bold;display:flex;justify-content:space-around;flex-wrap:wrap;
-}
-button{padding:6px 12px;cursor:pointer;}
-#searchBox{margin:10px 0;height:30px;font-size:15px;padding:4px;width:300px;}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Expense Tracker - Desktop Pro</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            overflow: hidden;
+        }
+        /* Desktop Optimized Container */
+        .sketch-container {
+            width: 90%;
+            max-width: 900px;
+            height: 80vh;
+            background: white;
+            border: 4px solid #000;
+            display: grid;
+            grid-template-columns: 250px 1fr;
+            position: relative;
+            box-shadow: 12px 12px 0px #000;
+        }
+        
+        /* Sidebar Navigation */
+        .sidebar {
+            border-right: 4px solid #000;
+            background: #fafafa;
+            display: flex;
+            flex-direction: column;
+        }
+        .nav-item {
+            padding: 20px;
+            border-bottom: 2px solid #000;
+            font-weight: 900;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .nav-item:hover { background: #eee; }
+        .nav-item.active { background: #000; color: #fff; }
+
+        .main-display {
+            padding: 40px;
+            overflow-y: auto;
+            background: #fff;
+        }
+
+        .page-content { display: none; }
+        .page-content.active { display: block; animation: fadeIn 0.3s ease; }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateX(10px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        .main-title {
+            font-size: 32px;
+            font-weight: 900;
+            border-bottom: 6px solid #000;
+            margin-bottom: 24px;
+            display: inline-block;
+            text-transform: uppercase;
+        }
+
+        .input-box {
+            border: 3px solid #000;
+            padding: 12px;
+            width: 100%;
+            margin-bottom: 15px;
+            outline: none;
+            font-size: 16px;
+            box-shadow: 4px 4px 0px #000;
+        }
+
+        .save-btn {
+            background: #000;
+            color: #fff;
+            padding: 15px;
+            font-weight: 900;
+            border: 3px solid #000;
+            cursor: pointer;
+            width: 100%;
+            box-shadow: 6px 6px 0px #4b5563;
+            text-transform: uppercase;
+        }
+        .save-btn:active {
+            transform: translate(3px, 3px);
+            box-shadow: 3px 3px 0px #4b5563;
+        }
+
+        /* Custom Modal */
+        #custom-modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.7);
+            z-index: 100;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-box {
+            background: white;
+            border: 4px solid #000;
+            box-shadow: 10px 10px 0px #000;
+            padding: 30px;
+            max-width: 400px;
+            width: 100%;
+            text-align: center;
+        }
+
+        #loading-overlay {
+            position: fixed;
+            inset: 0;
+            background: white;
+            z-index: 200;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        .loader {
+            border: 6px solid #f3f3f3;
+            border-top: 6px solid #000;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
 </head>
 <body>
 
-<div class="container">
-<div class="header">Sher Pharmacy</div>
+    <!-- Modal -->
+    <div id="custom-modal">
+        <div class="modal-box">
+            <p id="modal-text" class="font-bold text-lg mb-6"></p>
+            <div class="flex gap-4">
+                <button id="modal-ok" class="save-btn text-sm">OK</button>
+                <button id="modal-cancel" class="save-btn bg-white text-black text-sm hidden">CANCEL</button>
+            </div>
+        </div>
+    </div>
 
-<div class="top">
-<div>
-<button onclick="changeDay(-1)">⏮️ Prev</button>
-Date: <input type="date" id="date">
-<button onclick="changeDay(1)">Next ▶️</button>
-</div>
-<div>Telephone: <input placeholder="Phone No"></div>
-</div>
+    <!-- Sync Loader -->
+    <div id="loading-overlay">
+        <div class="loader mb-4"></div>
+        <p class="font-black">SYNCING DATA...</p>
+    </div>
 
-<input type="text" id="searchBox" placeholder="Search Company Name..." oninput="filterCompany()">
+    <!-- Login (Full Screen) -->
+    <div id="login-screen" class="hidden fixed inset-0 bg-gray-100 flex items-center justify-center z-50">
+        <div class="bg-white border-4 border-black p-10 shadow-[15px_15px_0px_#000] text-center max-w-md w-full">
+            <h1 class="text-4xl font-black mb-2 uppercase">EXPENSE TRACKER</h1>
+            <p class="text-sm font-bold mb-8">CLOUD DESKTOP EDITION</p>
+            <input type="text" id="login-name" placeholder="ENTER YOUR NAME" class="input-box text-center">
+            <button onclick="handleLogin()" class="save-btn">GET STARTED</button>
+        </div>
+    </div>
 
-<table id="table">
-<tr>
-<th>Company</th>
-<th>Bill</th>
-<th>Baqaya</th>
-<th>Order</th>
-<th>Order Payment</th>
-<th>Daily Sale</th>
-</tr>
-</table>
+    <!-- Main Desktop App -->
+    <div id="app-screen" class="sketch-container hidden">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="p-6 border-bottom-4 border-black mb-4">
+                <p class="text-[10px] font-black opacity-50">LOGGED IN AS</p>
+                <p id="display-user-name" class="text-xl font-black text-blue-600">...</p>
+            </div>
+            <div class="nav-item active" onclick="navTo('main-page', this)">DASHBOARD</div>
+            <div class="nav-item" onclick="navTo('balance-page', this)">WALLETS</div>
+            <div class="nav-item" onclick="navTo('entry-page', this)">NEW ENTRY</div>
+            <div class="nav-item" onclick="navTo('expense-page', this)">EXPENSES</div>
+            <div class="nav-item" onclick="navTo('report-page', this)">HISTORY</div>
+            <div class="mt-auto nav-item bg-red-50 text-red-600" onclick="handleLogout()">LOGOUT</div>
+        </div>
 
-<div class="summary">
-<div>Today Bill: Rs <span id="billT">0</span></div>
-<div>Today Order Pay: Rs <span id="orderT">0</span></div>
-<div>Today Daily Sale: Rs <span id="saleT">0</span></div>
-<div>Today Baqaya: Rs <span id="baqayaT">0</span></div>
-</div>
+        <!-- Content Area -->
+        <div class="main-display">
+            <!-- Dashboard -->
+            <div id="main-page" class="page-content active">
+                <h1 class="main-title">Status Summary</h1>
+                <div class="grid grid-cols-2 gap-6 mt-4">
+                    <div class="border-4 border-black p-8 bg-yellow-50 shadow-[8px_8px_0px_#000]">
+                        <p class="text-xs font-black uppercase mb-2">Total Net Balance</p>
+                        <p class="text-5xl font-black">Rs. <span class="total-bal-text">0</span></p>
+                    </div>
+                    <div class="grid grid-rows-2 gap-4">
+                        <div id="stat-in" class="border-4 border-black p-4 bg-green-50 flex justify-between items-center">
+                            <span class="font-black text-xs">TOTAL INCOME</span>
+                            <span class="font-black text-xl text-green-700">+ Rs. 0</span>
+                        </div>
+                        <div id="stat-out" class="border-4 border-black p-4 bg-red-50 flex justify-between items-center">
+                            <span class="font-black text-xs">TOTAL EXPENSES</span>
+                            <span class="font-black text-xl text-red-700">- Rs. 0</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
-<div class="monthly">
-<div>Monthly Bill: Rs <span id="mBill">0</span></div>
-<div>Monthly Order Pay: Rs <span id="mOrder">0</span></div>
-<div>Monthly Daily Sale: Rs <span id="mSale">0</span></div>
-<div>Monthly Baqaya: Rs <span id="mBaqaya">0</span></div>
-</div>
+            <!-- Wallet -->
+            <div id="balance-page" class="page-content">
+                <h2 class="main-title">Person-Wise Balances</h2>
+                <div id="person-balance-list" class="grid grid-cols-2 gap-4"></div>
+            </div>
 
-<div class="yearly">
-<div>Yearly Bill: Rs <span id="yBill">0</span></div>
-<div>Yearly Order Pay: Rs <span id="yOrder">0</span></div>
-<div>Yearly Daily Sale: Rs <span id="ySale">0</span></div>
-<div>Yearly Baqaya: Rs <span id="yBaqaya">0</span></div>
-</div>
+            <!-- Add Entry -->
+            <div id="entry-page" class="page-content">
+                <h2 class="main-title">Add New Record</h2>
+                <div class="max-w-md">
+                    <label class="text-xs font-black uppercase">Name / Category</label>
+                    <input type="text" id="in-person" placeholder="e.g. Rent, Friend Name, Groceries" class="input-box">
+                    
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="text-xs font-black uppercase">Amount</label>
+                            <input type="number" id="in-amount" placeholder="0.00" class="input-box">
+                        </div>
+                        <div>
+                            <label class="text-xs font-black uppercase">Transaction Type</label>
+                            <select id="in-type" class="input-box bg-white">
+                                <option value="income">Income (+)</option>
+                                <option value="expense">Expense (-)</option>
+                            </select>
+                        </div>
+                    </div>
 
-<!-- COMPANY SPECIFIC SUMMARY -->
-<div class="companySummary">
-<div>Company Bill Paid: Rs <span id="cBill">0</span></div>
-<div>Company Order Pay: Rs <span id="cOrder">0</span></div>
-<div>Company Daily Sale: Rs <span id="cSale">0</span></div>
-<div>Company Baqaya: Rs <span id="cBaqaya">0</span></div>
-</div>
+                    <label class="text-xs font-black uppercase">Date</label>
+                    <input type="date" id="in-date" class="input-box">
+                    
+                    <button id="add-btn" onclick="addRecord()" class="save-btn mt-4">SAVE TO CLOUD</button>
+                </div>
+            </div>
 
-<button onclick="window.print()">🖨️ Print</button>
-</div>
+            <!-- Expenses -->
+            <div id="expense-page" class="page-content">
+                <h2 class="main-title text-red-600">Expense Log</h2>
+                <div id="list-expenses" class="space-y-4"></div>
+            </div>
 
-<script>
-const dateInput=document.getElementById("date");
-dateInput.value=new Date().toISOString().split("T")[0];
+            <!-- Full History -->
+            <div id="report-page" class="page-content">
+                <div class="flex justify-between items-end mb-6">
+                    <h2 class="main-title">Master History</h2>
+                    <button onclick="clearHistoryPrompt()" class="bg-red-600 text-white font-black p-2 border-2 border-black mb-6 text-xs">CLEAR ALL DATA</button>
+                </div>
+                <div id="list-all" class="border-4 border-black">
+                    <!-- Table header -->
+                    <div class="grid grid-cols-4 bg-black text-white p-3 font-black text-xs uppercase">
+                        <div>Date</div>
+                        <div>Entity</div>
+                        <div>Type</div>
+                        <div class="text-right">Amount</div>
+                    </div>
+                    <div id="table-body"></div>
+                </div>
+            </div>
+        </div>
+    </div>
 
-function addRow(d={}){
-const r=document.createElement("tr");
-r.innerHTML=`
-<td><input value="${d.c||""}"></td>
-<td><input type="number" value="${d.b||""}"></td>
-<td><input type="number" value="${d.q||""}"></td>
-<td><textarea>${d.o||""}</textarea></td>
-<td><input type="number" value="${d.op||""}"></td>
-<td><input type="number" value="${d.s||""}"></td>
-`;
-table.appendChild(r);
-r.querySelectorAll("input,textarea").forEach(e=>e.oninput=save);
-}
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, onAuthStateChanged, signInAnonymously, signInWithCustomToken, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-function save(){
-let arr=[],b=0,q=0,o=0,s=0;
-document.querySelectorAll("#table tr").forEach((r,i)=>{
-if(i===0)return;
-let e=r.querySelectorAll("input,textarea");
-let d={c:e[0].value,b:+e[1].value||0,q:+e[2].value||0,o:e[3].value,op:+e[4].value||0,s:+e[5].value||0};
-b+=d.b; q+=d.q; o+=d.op; s+=d.s;
-arr.push(d);
-});
-billT.innerText=b; baqayaT.innerText=q; orderT.innerText=o; saleT.innerText=s;
-localStorage.setItem(dateInput.value,JSON.stringify(arr));
-calcMY();
-filterCompany();
-}
+        const firebaseConfig = JSON.parse(__firebase_config);
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'exp-comp-v1';
 
-function load(){
-document.querySelectorAll("#table tr").forEach((r,i)=>{if(i>0)r.remove();});
-let d=JSON.parse(localStorage.getItem(dateInput.value)||"[]");
-(d.length?d:Array(30).fill({})).forEach(x=>addRow(x));
-save();
-}
+        let currentUser = null;
+        let userData = { user: "User", history: [] };
 
-function changeDay(n){
-let d=new Date(dateInput.value);
-d.setDate(d.getDate()+n);
-dateInput.value=d.toISOString().split("T")[0];
-load();
-}
+        const showLoading = (s) => document.getElementById('loading-overlay').style.display = s ? 'flex' : 'none';
+        
+        const showModal = (text, onConfirm, showCancel = false) => {
+            const modal = document.getElementById('custom-modal');
+            const cancelBtn = document.getElementById('modal-cancel');
+            document.getElementById('modal-text').innerText = text;
+            modal.style.display = 'flex';
+            cancelBtn.classList.toggle('hidden', !showCancel);
+            document.getElementById('modal-ok').onclick = () => { modal.style.display = 'none'; if(onConfirm) onConfirm(); };
+            cancelBtn.onclick = () => modal.style.display = 'none';
+        };
 
-function calcMY(){
-let mB=0,mO=0,mQ=0,mS=0,yB=0,yO=0,yQ=0,yS=0;
-let ym=dateInput.value.slice(0,7),y=dateInput.value.slice(0,4);
-Object.keys(localStorage).forEach(k=>{
-let rows=JSON.parse(localStorage.getItem(k)||"[]");
-rows.forEach(r=>{
-if(k.startsWith(ym)){mB+=r.b;mO+=r.op;mQ+=r.q;mS+=r.s;}
-if(k.startsWith(y)){yB+=r.b;yO+=r.op;yQ+=r.q;yS+=r.s;}
-});
-});
-mBill.innerText=mB; mOrder.innerText=mO; mBaqaya.innerText=mQ; mSale.innerText=mS;
-yBill.innerText=yB; yOrder.innerText=yO; yBaqaya.innerText=yQ; ySale.innerText=yS;
-}
+        // Firebase Auth
+        const init = async () => {
+            try {
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+            } catch (e) { showModal("Network Connection Error!"); }
+        };
 
-// SEARCH FUNCTION + COMPANY SUMMARY
-function filterCompany(){
-let filter=document.getElementById("searchBox").value.toLowerCase();
-let cb=0,co=0,cs=0,cq=0;
-document.querySelectorAll("#table tr").forEach((r,i)=>{
-if(i===0)return; // skip header
-let comp=r.cells[0].querySelector("input").value.toLowerCase();
-if(comp.includes(filter)){
-r.style.display="";
-cb+=+r.cells[1].querySelector("input").value||0;
-cq+=+r.cells[2].querySelector("input").value||0;
-co+=+r.cells[4].querySelector("input").value||0;
-cs+=+r.cells[5].querySelector("input").value||0;
-}else r.style.display="none";
-});
-cBill.innerText=cb;
-cOrder.innerText=co;
-cBaqaya.innerText=cq;
-cSale.innerText=cs;
-}
+        onAuthStateChanged(auth, (user) => {
+            currentUser = user;
+            if (user) setupListener(user.uid);
+            else {
+                showLoading(false);
+                document.getElementById('login-screen').classList.remove('hidden');
+                document.getElementById('app-screen').classList.add('hidden');
+            }
+        });
 
-dateInput.onchange=load;
-load();
-</script>
+        const setupListener = (uid) => {
+            const ref = doc(db, 'artifacts', appId, 'users', uid, 'profile', 'data');
+            onSnapshot(ref, (snap) => {
+                if (snap.exists()) {
+                    userData = snap.data();
+                    document.getElementById('login-screen').classList.add('hidden');
+                    document.getElementById('app-screen').classList.remove('hidden');
+                    refresh();
+                } else {
+                    document.getElementById('login-screen').classList.remove('hidden');
+                }
+                showLoading(false);
+            }, (err) => showModal("Sync Error: " + err.message));
+        };
 
+        window.handleLogin = async () => {
+            const name = document.getElementById('login-name').value.trim() || "User";
+            showLoading(true);
+            await setDoc(doc(db, 'artifacts', appId, 'users', currentUser.uid, 'profile', 'data'), {
+                user: name, history: []
+            });
+        };
+
+        window.handleLogout = () => {
+            showModal("Are you sure you want to LOGOUT?", () => signOut(auth), true);
+        };
+
+        window.addRecord = async () => {
+            const person = document.getElementById('in-person').value.trim() || "General";
+            const amt = Number(document.getElementById('in-amount').value);
+            const type = document.getElementById('in-type').value;
+            const date = document.getElementById('in-date').value;
+
+            if(!amt || !date) return showModal("Please fill in all fields!");
+
+            const newHistory = [...userData.history, { person, date, amt, type, id: Date.now() }];
+            await setDoc(doc(db, 'artifacts', appId, 'users', currentUser.uid, 'profile', 'data'), {
+                ...userData, history: newHistory
+            });
+            
+            document.getElementById('in-amount').value = "";
+            document.getElementById('in-person').value = "";
+            showModal("Success! Saved to Cloud.");
+        };
+
+        window.clearHistoryPrompt = () => {
+            showModal("ERASE ALL DATA PERMANENTLY?", async () => {
+                await setDoc(doc(db, 'artifacts', appId, 'users', currentUser.uid, 'profile', 'data'), {
+                    ...userData, history: []
+                });
+            }, true);
+        };
+
+        window.navTo = (id, el) => {
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            el.classList.add('active');
+            document.querySelectorAll('.page-content').forEach(p => p.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+            if(id === 'entry-page') {
+                const n = new Date();
+                document.getElementById('in-date').value = `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}-${String(n.getDate()).padStart(2,'0')}`;
+            }
+        };
+
+        function refresh() {
+            document.getElementById('display-user-name').innerText = userData.user;
+            let bal = 0, inc = 0, exp = 0, pBal = {};
+
+            userData.history.forEach(h => {
+                if(!pBal[h.person]) pBal[h.person] = 0;
+                if(h.type === 'income') { bal += h.amt; inc += h.amt; pBal[h.person] += h.amt; }
+                else { bal -= h.amt; exp += h.amt; pBal[h.person] -= h.amt; }
+            });
+
+            document.querySelectorAll('.total-bal-text').forEach(e => e.innerText = bal.toLocaleString());
+            document.getElementById('stat-in').querySelector('span:last-child').innerText = `+ Rs. ${inc.toLocaleString()}`;
+            document.getElementById('stat-out').querySelector('span:last-child').innerText = `- Rs. ${exp.toLocaleString()}`;
+
+            document.getElementById('person-balance-list').innerHTML = Object.entries(pBal).map(([n, b]) => `
+                <div class="border-4 border-black p-4 flex justify-between items-center bg-white">
+                    <span class="font-black uppercase">${n}</span>
+                    <span class="font-black ${b>=0?'text-green-600':'text-red-600'}">Rs. ${b.toLocaleString()}</span>
+                </div>
+            `).join('') || '<p class="col-span-2 text-center py-10 opacity-40">No wallets yet</p>';
+
+            const exps = userData.history.filter(h => h.type === 'expense');
+            document.getElementById('list-expenses').innerHTML = exps.slice().reverse().map(e => `
+                <div class="p-4 border-4 border-black bg-red-50 flex justify-between items-center shadow-[6px_6px_0px_#000]">
+                    <div><p class="font-black uppercase">${e.person}</p><p class="text-[10px]">${e.date}</p></div>
+                    <span class="font-black text-xl text-red-600">Rs. ${e.amt.toLocaleString()}</span>
+                </div>
+            `).join('') || '<p class="text-center opacity-30 py-10 font-bold">NO EXPENSES RECORDED</p>';
+
+            document.getElementById('table-body').innerHTML = userData.history.slice().reverse().map(h => `
+                <div class="grid grid-cols-4 p-3 border-b-2 border-black text-xs font-bold bg-white">
+                    <div>${h.date}</div>
+                    <div class="uppercase">${h.person}</div>
+                    <div class="uppercase ${h.type==='income'?'text-green-600':'text-red-600'}">${h.type}</div>
+                    <div class="text-right font-black">Rs. ${h.amt.toLocaleString()}</div>
+                </div>
+            `).join('');
+        }
+
+        init();
+    </script>
 </body>
 </html>
